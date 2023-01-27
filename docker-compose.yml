@@ -1,0 +1,92 @@
+version: '3.9'
+
+x-trinity-volumes: &trinity-volumes
+  volumes:
+    - ./server:/opt/server/:rw
+    - ./etc:/opt/etc/:rw
+    - ${WOW_PATH}:/opt/wow:rw
+
+x-trinity-shared: &trinity-shared
+  environment:
+    - TZ=Europe/Stockholm
+  # restart: on-failure
+  # tty: true
+
+x-trinity-build: &trinity-build
+  dockerfile: Dockerfile
+  args:
+    USER_ID: ${USER_ID:-0}
+    GROUP_ID: ${GROUP_ID:-0}
+
+services:
+
+  compile:
+    image: dragonflight:compile
+    env_file:
+      - ./env/compile.env
+    container_name: trinity-compile
+    hostname: compile
+    build:
+      context: containers/compile
+      <<: *trinity-build
+    <<: *trinity-volumes
+    <<: *trinity-shared
+    profiles:
+      - compile
+
+  bnetserver:
+    container_name: trinity-bnetserver
+    image: dragonflight:bnetserver
+    build:
+      context: containers/bnetserver
+      <<: *trinity-build
+    <<: *trinity-volumes
+    <<: *trinity-shared
+    ports:
+      - "1119:1119"
+      - "8081:8081"
+
+  mariadb:
+    env_file:
+      - env/mariadb.env
+    ports:
+      - "3306:3306"
+    container_name: trinity-mariadb
+    hostname: trinitydb
+    image: dragonflight:mariadb
+    build:
+      context: containers/mariadb
+      <<: *trinity-build
+    <<: *trinity-volumes
+    <<: *trinity-shared
+      
+  worldserver:
+    container_name: trinity-worldserver
+    image: dragonflight:worldserver
+    build:
+      context: containers/worldserver
+      <<: *trinity-build
+    <<: *trinity-volumes
+    <<: *trinity-shared
+    ports:
+      - "3443:3443"
+      - "8085:8085"
+      - "8086:8086"
+
+  phpmyadmin:
+    image: phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_HOST=trinitydb
+      - PMA_USER=root
+      - PMA_PASSWORD=pwd
+    restart: "no"
+    depends_on:
+      - mariadb
+    profiles:
+      - dev
+
+networks:
+  default:
+    name: dragonflight-network

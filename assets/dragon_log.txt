@@ -1,0 +1,16 @@
+.tele thaldraszus
+.tele forbiddenreach
+.tele azurespan
+.tele ohnahranplains
+.tele wakingshores
+.tele valdrakken
+.additem 50818
+.additem 140407
+.additem 182614
+.additem 49286
+.additem 76755
+.additem 172012
+.additem 137570
+.additem 16342
+.additem 163042
+.additem 345986
